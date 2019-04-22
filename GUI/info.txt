@@ -1,0 +1,9 @@
+Databases:
+===============
+user: postgres
+pass: 12..
+port: 5432
+
+Installing Python library for Postgre
+$ pip install psycopg2
+
