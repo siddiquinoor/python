@@ -1,2 +1,18 @@
 Face detection image feature cascade in XML:
 https://github.com/opencv/opencv/tree/master/data/haarcasades
+
+Installing OpenCV on Linux
+1.Please open your terminal and execute the following commands one by one:
+
+sudo apt-get install libqt4-dev
+cmake -D WITH_QT=ON ..
+make
+sudo make install
+2.If that doesn't work, please execute this:
+
+sudo apt-get install libopencv-*
+3.Then install OpenCV with pip:
+
+pip install opencv-python
+
+4. Import cv2 in Python.If there are no errors, OpenCVhas been successfully installed.
