@@ -16,10 +16,12 @@ class DateParser:
         self.token = token
         self.valid_from = datetime(1920, 1, 1)
         self.valid_to = datetime(2030, 1, 1)
-        self.default_year = 2020
+        self.default_year = 2019
 
         self.dt_formats = [
             ['%d', '%m', '%Y'],
+            ['%d', '%m', '%y'],
+            ['%m', '%d', '%y'],
             ['%d', '%b', '%Y'],
             ['%d', '%B', '%Y'],
             ['%d', '%b'],
@@ -42,7 +44,7 @@ class DateParser:
                 try:
                     dt = datetime.strptime(' '.join(triple[:len(dt_format)]), ' '.join(dt_format))
 
-                    if '%Y' not in dt_format:
+                    if '%y' not in dt_format and '%Y' not in dt_format:
                         dt = dt.replace(year=self.default_year)
 
                     if self.valid_from <= dt <= self.valid_to:

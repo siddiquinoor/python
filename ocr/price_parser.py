@@ -11,23 +11,28 @@ class Price:
     def __init__(self, token):
         self.token = token
         self.ocr_arr = self.token.split("\n")
-        self.ht = ["ht"]
-        self.tva = ["tva"]
-        self.total = ["prix ttc", "total", "montant", "amount"]
+        self.ht = ["prix ht", "prix ht ei", "ht", "tarif h.t.", "total ht"]
+        self.tva = ["tva", "eva", "t.v.a.", "total tua", "total tva"]
+        self.total = ["prix ttc", "total", "total ttc", "montant", "hontant du", "amount", "tarif t.t.c"]
 
 
     #['Prix TTC euros : 10,10', 'Prix HT ers 8,42', 'TVA (20.00%) € : 1,68']
     def get_price(self, find_word):
         for line in self.ocr_arr:
-            #print(line)
             line = line.lower()
+            found = None
             if any(word in line for word in find_word):
                 try:
+                    matched = re.search(r'[-+]?\b(?!\d+\s*(?:[,.]\d+)?%)\d+\s*(?:[.,]\d+)?', line)
+                    # matched = re.search(r'[-+]?\b(?!\d+(?:[,.]\d+)?%)\d+(?:[.,]\d+)?', line)
+                    if matched:
+                        found = matched.group()
+                    # print(line)
                     # found = re.search('([+-]?([0-9]*[,.])?[0-9]+)', line).group()
-                    found = re.search(r'\d+(?:,\d+)(?!%)', line).group()
-                    #found = re.search(r'[-+]?\b(?!\d+(?:[,.]\d+)?%)\d+(?:[.,]\d+)?', line).group()
+                    # found = re.search(r'\d+(?:,\d+)(?!%)', line).group()
+                    # found = re.search(r'[-+]?\b(?!\d+(?:[,.]\d+)?%)\d+(?:[.,]\d+)?', line).group()
                 except AttributeError:
-                    # AAA, ZZZ not found in the original string
+                    # Not found in the original string
                     found = '0.00'  # apply your error handling
 
                 return found
