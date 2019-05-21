@@ -14,7 +14,7 @@ class DateParser:
 
     def __init__(self, token):
         self.token = token
-        self.valid_from = datetime(1920, 1, 1)
+        self.valid_from = datetime(2018, 1, 1)
         self.valid_to = datetime(2030, 1, 1)
         self.default_year = 2019
 

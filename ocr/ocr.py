@@ -2,6 +2,7 @@ r"""
 This file is the core of OCR related all functionality. It usages different custom made classes to process a file.
     - author: Siddiqui Noor
     - created: 15 May, 2019 11:59pm
+    - edited: 21 May, 3:45am
     - since: 1.0
 """
 import glob2
@@ -13,29 +14,30 @@ import json
 from PIL import Image
 from date_parser import DateParser
 from price_parser import Price
+from address_parser import AddressParser
 from datetime import datetime
 
 # Tesseract installation path for Windows only
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files (x86)\Tesseract-OCR\tesseract.exe'
+# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files (x86)\Tesseract-OCR\tesseract.exe'
 
-json_data = json.dumps({'error': True, 'message': 'File Not found!'})
+json_data = json.dumps({'error': True, 'code': 1000, 'message': 'Parameter missing!'})
+# print(sys.argv[2])
 
 
 class OCR:
     def __init__(self):
         try:
-            self.file = sys.argv[1]     # Must pass as a argument of an actual file with the script call
+            self.file = sys.argv[1]  # Must pass as a argument of an actual file with the script call
+            self.src_path = "/python/"  # This path is to write converted image into
+            # self.src_path = "D:/Projects/python/ocr/receipt/"  # Windows only
         except IndexError:
             self.file = None
-        if not self.file:
-            self.json_data = json.dumps({'error': True, 'message': 'File not found'})
+            self.json_data = json.dumps({'error': True, 'code': 1001, 'message': 'Parameter missing!'})
             raise ValueError(self.json_data)
-        else:
-            self.file = None            # This is the fruit to be eaten by OCR
-            self.json_data = None       # In all cases JSON will be return
-            # self.src_path = "/python/"  # This path is to write converted image into
-            # Path of working folder on Disk for Windows only
-            self.src_path = "D:/Projects/python/ocr/receipt/"
+        try:
+            self.debug = sys.argv[2]  # Second parameter ensures debug mode
+        except IndexError:
+            self.debug = None
 
     def __del__(self):
         self.json_data = None
@@ -47,7 +49,7 @@ class OCR:
         :param path: Directory path which contain images
         :return: expected value like date, total, ht, tva etc.
         :raise: need to handle except"""
-        images = glob2.glob(path+"/*.*")
+        images = glob2.glob(path + "/*.*")
 
         print('--- Start recognize text from image ---')
 
@@ -67,12 +69,12 @@ class OCR:
         """
         tests = """A\
     COFIROUTE “4p
-    
+
     SIRET 552 115 891 00418
-    
+
     TICKET A CONSERVER
     201803057137217412066
-    
+
     Gare : VELIZY
     Classe: 1 km:0011
     Trajet:VELIZY - RUEIL
@@ -83,14 +85,14 @@ class OCR:
     Paiement CARTE BANCAIRE
     XXXXXXXXXXXX 3569 S
     7113000356
-    
+
     Date :05/03/2018 17:41"""
         # sentences = tests.split('\n')
         # lists = []
         # for item in sentences:
         #     lists.append(item)
         # print(lists)
-        golden_data = {"Date": self.get_date(tests), "Amounts": self.get_prices(tests)}
+        golden_data = {'error': False, 'code': 200, "Date": self.get_date(tests), "Amounts": self.get_prices(tests)}
         print(golden_data)
 
     def remove_noise(self, img_path):
@@ -149,8 +151,27 @@ class OCR:
         :raise: need to handle empty OCR data
         """
         price = Price(ocr)
-        amounts = {"HT": price.get_price(price.ht), "TVA": price.get_price(price.tva), "Total": price.get_price(price.total)}
+        amounts = {"HT": price.get_price(price.ht), "TVA": price.get_price(price.tva),
+                   "Total": price.get_price(price.total)}
         return amounts
+
+    def get_title(self, ocr):
+        """Using AddressParser this function process given OCR data and returns title
+        :param ocr: as eaten OCR data from an image
+        :return: title
+        :raise: need to handle if passing data is empty
+        """
+        title = AddressParser(ocr)
+        return title.get_title()
+
+    def get_address(self, ocr):
+        """Using AddressParser this function process given OCR data and returns address
+        :param ocr: as eaten OCR data from an image
+        :return: address
+        :raise: need to handle if passing data is empty
+        """
+        address = AddressParser(ocr)
+        return address.get_info()
 
     # noinspection PyMethodMayBeStatic
     def write_file(self, ocr):
@@ -199,35 +220,41 @@ class OCR:
         :return: pecial string as OCR data
         """
         # Recognize text with tesseract for python
+        # print("The path: " + the_path)
         try:
-            result = pytesseract.image_to_string(Image.open(the_path), lang=ln)
+            result = pytesseract.image_to_string(Image.open(the_path), lang=ln, config='--psm 6')
+            data = json.dumps({'error': False, 'code': 200,  'ocr': result})
         except FileNotFoundError:
-            result = json.dumps({'error': True, 'message': 'File Not found!'})  # TODO:: Can pass json data then need to check error = False in get_data
+            data = json.dumps({'error': True, 'code': 1002,  'message': 'File Not found!'})  # TODO:: Can pass json data then need to check error = False in get_data
         except AttributeError:
-            result = json.dumps({'error': True, 'message': 'Invalid file can not be read!'})
-        return result
+            data = json.dumps({'error': True, 'code': 1003, 'message': 'Invalid file can not be read!'})
+        # in all cases return data
+        return data
 
     def get_string(self, img_path):
         # return read_cv(img_path)
         return self.read_tesseract(img_path)  # This works for maximum effected result
 
     # noinspection PyMethodMayBeStatic
-    def get_data(self, debug=0):
+    def get_data(self):
         str_ocr = self.get_string(self.file)
-        debug = json.loads(str_ocr)
-        if not debug['error']:
-            if str_ocr is not None:
-                if debug:
-                    self.json_data = json.dumps({'error': False, 'message': str_ocr})
-                # write_file(str_ocr)
-                golden_data = {'date': self.get_date(str_ocr), 'amounts': self.get_prices(str_ocr), 'ocr': str_ocr}
-                self.json_data = json.dumps(golden_data)
-            else:
-                self.json_data = json.dumps({'error': True, 'message': 'Failed to process OCR!'})
-
-            return self.json_data
+        data = json.loads(str_ocr)
+        if data['error']:
+            self.json_data = json.dumps({'error': True, 'code': data['code'], 'message': data['message']})
         else:
-            return debug
+            if data['ocr'] is not None:
+                if self.debug is not None:
+                    # print("The debug: " + data['ocr'])
+                    self.json_data = json.dumps({'error': False, 'code': 200,  'message': data['ocr']})
+                    self.write_file(data['ocr'])
+                else:
+                    addresses = json.loads(self.get_address(data['ocr']))
+                    golden_data = {'error': False, 'code': 200, 'title': addresses['title'], 'address': addresses['address'], 'siret': addresses['siret'], 'date': self.get_date(data['ocr']), 'amounts': self.get_prices(data['ocr']), 'ocr': data['ocr']}
+                    self.json_data = json.dumps(golden_data)
+            else:
+                self.json_data = json.dumps({'error': True, 'code': 1005,  'message': 'Failed to process OCR!'})
+        # in all cases return the JSON data
+        return self.json_data
 
 
 try:
@@ -235,6 +262,6 @@ try:
 except ValueError:
     print(json_data)
 else:
-    json_data = ocr.get_data()
-    print(json_data)
+    j_data = ocr.get_data()
+    print(j_data)
     # test()

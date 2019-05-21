@@ -27,7 +27,7 @@ class Price:
                     # matched = re.search(r'[-+]?\b(?!\d+(?:[,.]\d+)?%)\d+(?:[.,]\d+)?', line)
                     if matched:
                         found = matched.group()
-                    # print(line)
+                    # print(found)
                     # found = re.search('([+-]?([0-9]*[,.])?[0-9]+)', line).group()
                     # found = re.search(r'\d+(?:,\d+)(?!%)', line).group()
                     # found = re.search(r'[-+]?\b(?!\d+(?:[,.]\d+)?%)\d+(?:[.,]\d+)?', line).group()
